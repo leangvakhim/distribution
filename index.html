@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypothesis Testing Visualizer (Z, T, F, χ²)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen py-8">
+
+    <div class="max-w-5xl mx-auto px-4">
+        <!-- Header -->
+        <header class="mb-8 text-center">
+            <h1 id="mainTitle" class="text-3xl font-bold text-slate-900 mb-2">Z-Distribution Hypothesis Testing</h1>
+            <p class="text-slate-600">Visualize rejection regions and practice your statistical decision making.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Controls Sidebar -->
+            <div class="lg:col-span-1 space-y-6">
+
+                <!-- Test Settings -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
+                            </path>
+                        </svg>
+                        Test Settings
+                    </h2>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Distribution Type</label>
+                        <select id="distSelect"
+                            class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border text-sm">
+                            <option value="z">Z-Distribution</option>
+                            <option value="t">T-Distribution</option>
+                            <option value="f">F-Distribution</option>
+                            <option value="c">Chi-Square (χ²) Distribution</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Tailed Test</label>
+                        <div class="space-y-2">
+                            <label
+                                class="flex items-center p-2 border rounded cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="tailTest" value="left" class="w-4 h-4 text-blue-600">
+                                <span class="ml-2 text-sm">Left-tailed Test</span>
+                            </label>
+                            <label
+                                class="flex items-center p-2 border rounded cursor-pointer hover:bg-slate-50 transition">
+                                <input type="radio" name="tailTest" value="right" class="w-4 h-4 text-blue-600">
+                                <span class="ml-2 text-sm">Right-tailed Test</span>
+                            </label>
+                            <label
+                                class="flex items-center p-2 border rounded cursor-pointer hover:bg-slate-50 transition bg-blue-50 border-blue-200"
+                                id="twoTailLabel">
+                                <input type="radio" name="tailTest" value="two" class="w-4 h-4 text-blue-600" checked>
+                                <span class="ml-2 text-sm">Two-tailed Test</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Decision Method</label>
+                        <select id="methodSelect"
+                            class="w-full border-slate-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border text-sm">
+                            <option value="z">Z-Calculation vs Z-Criteria</option>
+                            <option value="p">P-value vs Level of Significance (α)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Inputs -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold mb-4">Values</h2>
+
+                    <!-- DF Input for T-Distribution and Chi-Square -->
+                    <div id="dfSingleContainer" class="mb-4 hidden">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Degrees of Freedom (df)</label>
+                        <input type="number" id="df" value="10" step="1" min="1"
+                            class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <!-- DF Inputs for F-Distribution -->
+                    <div id="dfFContainer" class="mb-4 hidden space-y-3">
+                        <div class="flex gap-3">
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Numerator (df₁)</label>
+                                <input type="number" id="df1" value="5" step="1" min="1"
+                                    class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div class="flex-1">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Denominator (df₂)</label>
+                                <input type="number" id="df2" value="10" step="1" min="1"
+                                    class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="zMethodInputs" class="space-y-4">
+                        <div>
+                            <label id="lblCrit" class="block text-sm font-medium text-slate-700 mb-1">Z-Criteria
+                                (z_critical)</label>
+                            <input type="number" id="statCrit" value="1.96" step="0.01"
+                                class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label id="lblCalc" class="block text-sm font-medium text-slate-700 mb-1">Z-Calculation
+                                (z_calc)</label>
+                            <input type="number" id="statCalc" value="2.15" step="0.01"
+                                class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div id="pMethodInputs" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Level of Significance
+                                (α)</label>
+                            <input type="number" id="alpha" value="0.05" step="0.001" min="0" max="1"
+                                class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">P-value</label>
+                            <input type="number" id="pValue" value="0.031" step="0.001" min="0" max="1"
+                                class="w-full border-slate-300 rounded-md shadow-sm p-2 border focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+
+                    <button id="saveValuesBtn"
+                        class="mt-6 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow transition transform active:scale-95">
+                        Save & Update Graph
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Visualization Area -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Canvas Container -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-semibold">Distribution Graph</h2>
+                        <div class="flex space-x-4 text-xs font-medium">
+                            <div class="flex items-center"><span
+                                    class="w-3 h-3 bg-red-500 rounded-full mr-1 opacity-60"></span> Rejection Region
+                            </div>
+                            <div class="flex items-center"><span class="w-3 h-3 bg-blue-600 rounded-full mr-1"></span>
+                                Test Statistic</div>
+                        </div>
+                    </div>
+                    <canvas id="zChart" width="800" height="400"
+                        class="w-full h-auto border border-slate-100 rounded bg-slate-50"></canvas>
+                </div>
+
+                <!-- Decision Area -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                    <h2 class="text-xl font-semibold mb-2">Make Your Decision</h2>
+                    <p class="text-sm text-slate-500 mb-6" id="decisionPrompt">Based on the inputs above, what is your
+                        conclusion?</p>
+
+                    <div class="flex flex-col sm:flex-row justify-center gap-4">
+                        <button onclick="checkDecision('reject')"
+                            class="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition transform active:scale-95 flex-1 max-w-xs mx-auto">
+                            Reject Null Hypothesis
+                        </button>
+                        <button onclick="checkDecision('fail')"
+                            class="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-semibold rounded-lg shadow transition transform active:scale-95 flex-1 max-w-xs mx-auto">
+                            Fail to Reject Null Hypothesis
+                        </button>
+                    </div>
+
+                    <!-- Feedback Alert -->
+                    <div id="feedbackBox" class="mt-6 p-4 rounded-lg hidden transition-all duration-300">
+                        <p id="feedbackText" class="font-medium text-lg"></p>
+                        <p id="feedbackExplanation" class="text-sm mt-1"></p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
